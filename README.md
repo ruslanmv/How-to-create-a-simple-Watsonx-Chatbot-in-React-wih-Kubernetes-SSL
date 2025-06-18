@@ -58,6 +58,218 @@ Before we begin, ensure you have the following installed and configured:
   * A public **hostname** pointing to your cluster's Ingress controller. We will use an example domain like `chatbot.c130-e.us-south.containers.cloud.ibm.com`.
     > **Important**: In all subsequent steps, replace `YOUR_REGISTRY` with your container registry path and `chatbot.c130-e.us-south.containers.cloud.ibm.com` with your actual public hostname.
 
+<details> <summary><strong>install.sh</strong>  Development Environment Installer for Ubuntu 22.04</summary>
+
+```bash
+#!/usr/bin/env bash
+#
+# install.sh - Comprehensive Development Environment Installer for Ubuntu 22.04
+#
+# This script installs:
+# - Common utilities (curl, gnupg, etc.)
+# - Python 3.11
+# - Node.js v20 & npm
+# - Docker Engine & Docker Compose
+# - kubectl (Kubernetes CLI)
+# - Helm (Kubernetes Package Manager)
+# - oc (OpenShift CLI) - Optional
+
+set -euo pipefail
+IFS=$'\n\t'
+
+# --- HELPERS ---
+log() {
+    echo -e "\n[$(date +'%Y-%m-%d %H:%M:%S')] - $1"
+}
+
+# --- CONFIGURATION ---
+K8S_STABLE_VERSION="v1.30" # Target Kubernetes minor version. Verify at https://kubernetes.io/releases/
+
+# --- INSTALLATION FUNCTIONS ---
+
+install_base_prereqs() {
+    log "⚙️ Updating package lists and installing base prerequisites..."
+    sudo apt-get update -y
+    sudo apt-get install -y curl ca-certificates gnupg apt-transport-https software-properties-common
+    log "✅ Base prerequisites installed."
+}
+
+install_python() {
+    log "🐍 Installing Python 3.11..."
+    if command -v python3.11 &>/dev/null; then
+        log "✅ Python 3.11 is already installed."
+        python3.11 --version
+        return
+    fi
+    sudo add-apt-repository ppa:deadsnakes/ppa -y
+    sudo apt-get update -y
+    sudo apt-get install -y python3.11 python3.11-venv python3.11-dev python3-pip
+    log "✅ Python 3.11 installed."
+    python3.11 --version
+}
+
+install_node() {
+    log "📦 Installing Node.js (v20.x) and npm..."
+    if command -v node &>/dev/null && [[ "$(node -v)" == v20* ]]; then
+        log "✅ Node.js v20 is already installed."
+        node -v
+        npm -v
+        return
+    fi
+    # Add NodeSource repository
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    log "✅ Node.js and npm installed."
+    node -v
+    npm -v
+}
+
+install_docker() {
+    log "🐳 Installing Docker Engine and Docker Compose..."
+    if command -v docker &>/dev/null; then
+        log "✅ Docker is already installed."
+        docker --version
+        return
+    fi
+    # Add Docker's official GPG key
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo rm -f /etc/apt/keyrings/docker.gpg
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+    # Add the repository to Apt sources
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update -y
+
+    # Install the latest version
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    # Add current user to the 'docker' group
+    log "🔧 Adding current user ($USER) to the 'docker' group..."
+    sudo groupadd --force docker
+    sudo usermod -aG docker "$USER"
+    
+    log "✅ Docker installed successfully."
+    log "⚠️ IMPORTANT: You must log out and log back in for the Docker group changes to take effect!"
+}
+
+install_kubectl() {
+    log "☸️ Installing kubectl (target: $K8S_STABLE_VERSION)..."
+    
+    # Clean old k8s repos
+    log "🧹 Cleaning up old Kubernetes repository configurations..."
+    sudo rm -f /etc/apt/sources.list.d/kubernetes*.list
+    sudo sed -i.bak -E '/(packages\.cloud\.google\.com\/apt|apt\.kubernetes\.io)/d' \
+      /etc/apt/sources.list.d/*.list /etc/apt/sources.list 2>/dev/null || true
+
+    # Add new key for pkgs.k8s.io
+    log "🔑 Adding new Kubernetes GPG key..."
+    sudo mkdir -p /etc/apt/keyrings
+    sudo rm -f /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    curl -fsSL "https://pkgs.k8s.io/core:/stable:/$K8S_STABLE_VERSION/deb/Release.key" \
+      | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    sudo chmod a+r /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    # Add new repo for pkgs.k8s.io
+    log "📝 Adding new Kubernetes APT repository..."
+    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$K8S_STABLE_VERSION/deb/ /" \
+      | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+    # Install kubectl
+    log "⬇️ Updating package lists and installing kubectl..."
+    sudo apt-get update -y
+    sudo apt-get install -y kubectl
+    
+    log "✅ kubectl installed."
+    kubectl version --client
+}
+
+install_helm() {
+    log "🚀 Installing Helm..."
+    if command -v helm &>/dev/null; then
+        log "✅ Helm is already installed."
+        helm version
+        return
+    fi
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    log "✅ Helm installed."
+    helm version
+}
+
+install_oc() {
+    log "🅾️ Installing OpenShift CLI (oc)..."
+    if command -v oc &>/dev/null; then
+        log "✅ OpenShift CLI is already installed."
+        oc version --client
+        return
+    fi
+    local OC_URL="https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz"
+    
+    log "🔄 Downloading oc CLI from: $OC_URL"
+    curl -Lo oc.tar.gz "$OC_URL"
+    
+    log "📦 Extracting oc.tar.gz..."
+    tar -xvzf oc.tar.gz
+    
+    log "🚚 Moving oc binary to /usr/local/bin..."
+    sudo mv oc /usr/local/bin/
+    
+    log "🧹 Cleaning up..."
+    rm -f oc.tar.gz
+    rm -f README.md || true
+    
+    log "✅ Verifying oc installation..."
+    oc version --client
+    log "🎉 'oc' CLI installed successfully!"
+}
+
+
+# --- MAIN EXECUTION ---
+main() {
+    log "🚀 Starting Development Environment Setup for Ubuntu 22.04 🚀"
+    
+    install_base_prereqs
+    install_python
+    install_node
+    install_docker
+    install_kubectl
+    install_helm
+
+    echo
+    read -p "🤔 Do you want to install the OpenShift CLI (oc)? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_oc
+    else
+        log "⏩ Skipping OpenShift CLI installation."
+    fi
+
+    log "🎉🎉🎉 --- ALL DONE! --- 🎉🎉🎉"
+    log "Your development environment is ready."
+    log "⚠️ REMINDER: Please log out and log back in to use Docker without 'sudo'."
+}
+
+# --- WRAPPER FOR USER ---
+# The <details> block is for display purposes in certain environments.
+# To run this script, save it as 'install.sh', then execute:
+# chmod +x install.sh
+# ./install.sh
+# 
+# <details> <summary><strong>install.sh</strong> Client Develop Enviroment</summary>
+# ```bash
+# # (The entire script content goes here)
+# ```
+# </details>
+
+main "$@"
+```
+</details>
+
+
+
 ## 1\. Project Structure
 
 A clean project structure is key for maintainability. We'll separate the frontend and backend into their own directories.
