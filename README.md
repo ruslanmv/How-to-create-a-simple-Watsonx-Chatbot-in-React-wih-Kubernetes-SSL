@@ -58,6 +58,9 @@ Before we begin, ensure you have the following installed and configured:
   * A public **hostname** pointing to your cluster's Ingress controller. We will use an example domain like `chatbot.c130-e.us-south.containers.cloud.ibm.com`.
     > **Important**: In all subsequent steps, replace `YOUR_REGISTRY` with your container registry path and `chatbot.c130-e.us-south.containers.cloud.ibm.com` with your actual public hostname.
 
+We have created a simple script to create the development enviroment in ubuntu 22.04, save it as 'install.sh', then execute:
+chmod +x install.sh
+./install.sh
 <details> <summary><strong>install.sh</strong>  Development Environment Installer for Ubuntu 22.04</summary>
 
 ```bash
@@ -252,17 +255,7 @@ main() {
     log "⚠️ REMINDER: Please log out and log back in to use Docker without 'sudo'."
 }
 
-# --- WRAPPER FOR USER ---
-# The <details> block is for display purposes in certain environments.
-# To run this script, save it as 'install.sh', then execute:
-# chmod +x install.sh
-# ./install.sh
-# 
-# <details> <summary><strong>install.sh</strong> Client Develop Enviroment</summary>
-# ```bash
-# # (The entire script content goes here)
-# ```
-# </details>
+
 
 main "$@"
 ```
