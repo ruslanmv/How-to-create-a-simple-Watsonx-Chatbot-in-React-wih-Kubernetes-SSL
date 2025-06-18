@@ -67,7 +67,9 @@ watsonx-chatbot/
     └── watsonx-secret.yaml
 ```
 
-## 2\. The FastAPI Backend (`backend/`)
+
+
+## 2. The FastAPI Backend (`backend/`)
 
 Let's start by building the backend service that will securely handle communication with the Watsonx.ai API.
 
@@ -75,7 +77,8 @@ Let's start by building the backend service that will securely handle communicat
 
 In the `backend/` directory, create the following files.
 
-\<details\>\<summary\>\<strong\>backend/requirements.txt\</strong\>\</summary\>
+<details>
+<summary><strong>backend/requirements.txt</strong></summary>
 
 ```text
 fastapi
@@ -86,9 +89,10 @@ python-dotenv
 python-decouple
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>backend/main.py\</strong\> - Enhanced with CORS, Health Check, and Error Handling\</summary\>
+<details>
+<summary><strong>backend/main.py</strong> - Enhanced with CORS, Health Check, and Error Handling</summary>
 
 ```python
 import os
@@ -114,14 +118,13 @@ if not (APIKEY and PROJECT_ID):
 # --- Watsonx.ai Client Initialization ---
 try:
     svc = WatsonXAI.new_instance(
-        version="2024-05-31", # Use a recent, stable version
+        version="2024-05-31",  # Use a recent, stable version
         service_url=URL,
         apikey=APIKEY
     )
 except Exception as e:
     # Catch potential initialization errors
     raise RuntimeError(f"Failed to initialize WatsonXAI client: {e}") from e
-
 
 # --- FastAPI Application ---
 app = FastAPI(
@@ -135,7 +138,7 @@ app = FastAPI(
 # In a real production scenario, you would restrict this to your specific frontend URL.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For simplicity. Restrict this in production!
+    allow_origins=["*"],  # For simplicity. Restrict this in production!
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
@@ -183,12 +186,15 @@ async def chat(req: ChatRequest):
     except Exception as e:
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="An internal error occurred while processing the request.")
-
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>backend/Dockerfile\</strong\> - Secure and Optimized\</summary\>
+
+
+
+<details>
+<summary><strong>backend/Dockerfile</strong> - Secure and Optimized</summary>
 
 > **Security Note**: This Dockerfile **does not** copy any `.env` file or secrets into the image. Credentials will be injected at runtime in Kubernetes, which is the correct and secure practice.
 
@@ -232,7 +238,10 @@ EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-\</details\>
+</details>
+
+
+
 
 ## 3\. The React Frontend (`frontend/`)
 
@@ -259,7 +268,9 @@ npx tailwindcss init -p
 
 Update the generated files and create new ones as shown below.
 
-\<details\>\<summary\>\<strong\>frontend/tailwind.config.js\</strong\>\</summary\>
+
+<details>
+<summary><strong>frontend/tailwind.config.js</strong></summary>
 
 ```js
 /** @type {import('tailwindcss').Config} */
@@ -275,9 +286,10 @@ export default {
 }
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>frontend/src/index.css\</strong\>\</summary\>
+<details>
+<summary><strong>frontend/src/index.css</strong></summary>
 
 ```css
 @tailwind base;
@@ -289,9 +301,14 @@ body {
 }
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>frontend/.env.example\</strong\>\</summary\>
+
+
+
+
+<details>
+<summary><strong>frontend/.env.example</strong></summary>
 
 ```dotenv
 # This URL will be used by the local dev server.
@@ -299,34 +316,44 @@ body {
 VITE_BACKEND_URL=http://localhost:8000
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>frontend/vite.config.js\</strong\> (For local SSL development)\</summary\>
+
+
+
+
+<details>
+<summary><strong>frontend/vite.config.js</strong> (For local SSL development)</summary>
 
 ```js
-import { defineConfig } from &#39;vite&#39;;
-import react from &#39;@vitejs/plugin-react&#39;;
-import basicSsl from &#39;vite-plugin-basic-ssl&#39;;
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import basicSsl from 'vite-plugin-basic-ssl';
 
 export default defineConfig({
-plugins: [react(), basicSsl()],
-server: {
-// This allows the frontend dev server to proxy requests to the backend
-proxy: {
-'/api': {
-target: 'http://127.0.0.1:8000',
-changeOrigin: true,
-secure: false,
-}
-}
-}
+  plugins: [react(), basicSsl()],
+  server: {
+    // This allows the frontend dev server to proxy requests to the backend
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
-
 ```
 
 </details>
 
-<details><summary><strong>frontend/src/services/watsonx.js</strong> (API Logic)</summary>
+
+
+
+
+
+<details>
+<summary><strong>frontend/src/services/watsonx.js</strong> (API Logic)</summary>
 
 ```javascript
 // A thin wrapper that calls our FastAPI backend
@@ -352,9 +379,12 @@ export async function chatWithWatson(userInput) {
 }
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>frontend/src/App.jsx\</strong\> - The Chat UI Component\</summary\>
+
+
+<details>
+<summary><strong>frontend/src/App.jsx</strong> - The Chat UI Component</summary>
 
 ```jsx
 import { useState, useRef, useEffect } from 'react';
@@ -363,36 +393,42 @@ import { chatWithWatson } from './services/watsonx';
 // Simple SVG icon for the send button
 const SendIcon = () => (
   <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="currentColor">
-    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
   </svg>
 );
 
-const UserAvatar = () => <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0"></div>;
-const BotAvatar = () => <div className="w-8 h-8 rounded-full bg-indigo-500 flex-shrink-0"></div>;
+const UserAvatar = () => <div className="w-8 h-8 rounded-full bg-blue-500 flex-shrink-0" />;
+const BotAvatar = () => <div className="w-8 h-8 rounded-full bg-indigo-500 flex-shrink-0" />;
 
 const Message = ({ from, text }) => {
   const isUser = from === 'user';
   return (
     <div className={`flex items-start gap-3 my-4 ${isUser ? 'flex-row-reverse' : ''}`}>
       {isUser ? <UserAvatar /> : <BotAvatar />}
-      <div className={`px-4 py-3 rounded-lg max-w-sm ${isUser ? 'bg-blue-100 text-gray-800' : 'bg-gray-200 text-gray-800'}`}>
+      <div
+        className={`px-4 py-3 rounded-lg max-w-sm ${
+          isUser ? 'bg-blue-100 text-gray-800' : 'bg-gray-200 text-gray-800'
+        }`}
+      >
         <p className="text-sm">{text}</p>
       </div>
     </div>
   );
 };
 
-
 export default function App() {
   const [messages, setMessages] = useState([
-    { from: 'bot', text: 'Hello! I am a chatbot powered by Watsonx.ai. How can I assist you today?' }
+    {
+      from: 'bot',
+      text: 'Hello! I am a chatbot powered by Watsonx.ai. How can I assist you today?',
+    },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(scrollToBottom, [messages]);
@@ -401,16 +437,19 @@ export default function App() {
     if (!input.trim() || isLoading) return;
 
     const userMessage = { from: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
       const reply = await chatWithWatson(userMessage.text);
-      setMessages(prev => [...prev, { from: 'bot', text: reply }]);
+      setMessages((prev) => [...prev, { from: 'bot', text: reply }]);
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { from: 'bot', text: `⚠️ Error: ${error.message}` }]);
+      setMessages((prev) => [
+        ...prev,
+        { from: 'bot', text: `⚠️ Error: ${error.message}` },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -419,9 +458,11 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <header className="bg-white shadow-md p-4">
-        <h1 className="text-2xl font-bold text-gray-800 text-center">Watsonx.ai Chatbot</h1>
+        <h1 className="text-2xl font-bold text-gray-800 text-center">
+          Watsonx.ai Chatbot
+        </h1>
       </header>
-      
+
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-3xl mx-auto">
           {messages.map((m, i) => (
@@ -438,8 +479,8 @@ export default function App() {
             className="flex-grow border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Type a message…"
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             disabled={isLoading}
           />
           <button
@@ -456,13 +497,17 @@ export default function App() {
 }
 ```
 
-\</details\>
+</details>
+
+
 
 ### Step 3.3: Create Frontend Dockerfile
 
 This multi-stage Dockerfile first builds the static React assets and then serves them using a lightweight Nginx server, resulting in a small and secure final image.
 
-\<details\>\<summary\>\<strong\>frontend/Dockerfile\</strong\> - Multi-stage Production Build\</summary\>
+
+<details>
+<summary><strong>frontend/Dockerfile</strong> - Multi-stage Production Build</summary>
 
 ```dockerfile
 # --- Stage 1: Build ---
@@ -500,7 +545,9 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-\</details\>
+</details>
+
+
 
 ## 4\. Build and Push the Docker Images
 
@@ -548,7 +595,9 @@ kubectl create secret generic watsonx-creds \
 
 Here are the YAML manifests for all our Kubernetes resources.
 
-\<details\>\<summary\>\<strong\>k8s/namespace.yaml\</strong\>\</summary\>
+
+<details>
+<summary><strong>k8s/namespace.yaml</strong></summary>
 
 ```yaml
 apiVersion: v1
@@ -557,9 +606,11 @@ metadata:
   name: watsonx-chat
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>k8s/backend-deployment.yaml\</strong\> (with Probes & Resources)\</summary\>
+
+<details>
+<summary><strong>k8s/backend-deployment.yaml</strong> (with Probes & Resources)</summary>
 
 ```yaml
 apiVersion: apps/v1
@@ -606,9 +657,13 @@ spec:
             periodSeconds: 20
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>k8s/backend-service.yaml\</strong\>\</summary\>
+
+
+
+<details>
+<summary><strong>k8s/backend-service.yaml</strong></summary>
 
 ```yaml
 apiVersion: v1
@@ -625,9 +680,13 @@ spec:
       targetPort: 8000
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>k8s/frontend-deployment.yaml\</strong\>\</summary\>
+
+
+
+<details>
+<summary><strong>k8s/frontend-deployment.yaml</strong></summary>
 
 ```yaml
 apiVersion: apps/v1
@@ -659,9 +718,10 @@ spec:
               memory: "128Mi"
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>k8s/frontend-service.yaml\</strong\>\</summary\>
+<details>
+<summary><strong>k8s/frontend-service.yaml</strong></summary>
 
 ```yaml
 apiVersion: v1
@@ -678,7 +738,9 @@ spec:
       targetPort: 80
 ```
 
-\</details\>
+</details>
+
+
 
 ### Step 5.3: Install Cert-Manager
 
@@ -699,7 +761,9 @@ helm install cert-manager jetstack/cert-manager \
 
 Now, create a `ClusterIssuer` to tell cert-manager how to obtain certificates from Let's Encrypt.
 
-\<details\>\<summary\>\<strong\>k8s/cluster-issuer.yaml\</strong\>\</summary\>
+
+<details>
+<summary><strong>k8s/cluster-issuer.yaml</strong></summary>
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -718,13 +782,18 @@ spec:
             class: nginx # Or your specific ingress class
 ```
 
-\</details\>
+</details>
+
+
 
 ### Step 5.4: Expose the Application with Ingress (or OpenShift Route)
 
 This is the final step, where we expose our application to the internet and enable TLS.
 
-\<details\>\<summary\>\<strong\>k8s/ingress.yaml\</strong\> (For standard Kubernetes with NGINX Ingress)\</summary\>
+
+
+<details>
+<summary><strong>k8s/ingress.yaml</strong> (For standard Kubernetes with NGINX Ingress)</summary>
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -765,9 +834,12 @@ spec:
                   number: 80
 ```
 
-\</details\>
+</details>
 
-\<details\>\<summary\>\<strong\>k8s/route-openshift.yaml\</strong\> (Alternative for OpenShift)\</summary\>
+
+
+<details>
+<summary><strong>k8s/route-openshift.yaml</strong> (Alternative for OpenShift)</summary>
 
 > **Note**: If you're on OpenShift, you can use a `Route` object, which is the native way to expose services. OpenShift's built-in router can handle TLS termination.
 
@@ -809,7 +881,9 @@ spec:
     insecureEdgeTerminationPolicy: Redirect
 ```
 
-\</details\>
+</details>
+
+
 
 ## 6\. Deploy Everything and Verify
 
@@ -856,7 +930,6 @@ It might take a few minutes for the certificate to be issued and the pods to bec
 
 You should see your beautifully styled chatbot, secured with a valid TLS certificate from Let's Encrypt. Send a message and watch it interact with Watsonx.ai via your secure backend.
 
------
 
 ### Why This Enhanced Architecture Rocks
 
