@@ -15,6 +15,33 @@ We will walk through every step:
 
 The final architecture is GitOps-friendly, promoting modern CI/CD practices.
 
+
+```mermaid
+graph TD
+  A[User Browser] -->|HTTPS| B[NGINX Ingress / OpenShift Route]
+  
+  B -->|/api| C[Backend Service FastAPI]
+  B -->|/| D[Frontend Service React]
+
+  C -->|API Call| E[IBM Watsonx.ai API]
+
+  subgraph Kubernetes Cluster
+    B
+    C
+    D
+    subgraph Secrets & Configs
+      F[Watsonx Credentials Secret]
+      G[cert-manager & TLS Issuer]
+    end
+  end
+
+  G --> B
+  F --> C
+
+```
+
+
+
 ### Final Application Preview
 
 Here's a sneak peek of our good-looking chatbot interface:
