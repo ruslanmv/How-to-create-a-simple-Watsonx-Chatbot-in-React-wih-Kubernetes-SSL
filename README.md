@@ -50,8 +50,8 @@ Here's a sneak peek of our good-looking chatbot interface:
 
 Before we begin, ensure you have the following installed and configured:
 
-  * **Node.js ≥ 18** and **npm**
-  * **Python ≥ 3.9**
+  * **Node.js ≥ 20** and **npm**
+  * **Python ≥ 3.11**
   * **Docker** and a container registry (like Docker Hub, Quay.io, or a private registry).
   * A **Kubernetes cluster** with `kubectl` configured. An OpenShift cluster will also work perfectly.
   * **Helm** (the Kubernetes package manager) for installing cert-manager.
