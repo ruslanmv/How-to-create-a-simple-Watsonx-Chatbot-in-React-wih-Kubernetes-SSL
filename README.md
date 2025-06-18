@@ -1,4 +1,6 @@
 # How to Create a Production-Ready Watsonx.ai Chatbot in React & Python with Kubernetes and Let's Encrypt
+Hello everyone, today we are goint to build a simple Chatbot with **Watsonx.ai** ready for production
+in Kubernetes. 
 
 Welcome to this comprehensive guide where we will build a sleek, secure, and scalable chatbot powered by **IBM's Watsonx.ai**. This tutorial goes beyond a simple proof-of-concept to deliver a production-grade solution.
 
